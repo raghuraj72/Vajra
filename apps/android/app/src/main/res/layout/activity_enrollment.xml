@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="20dp">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Paste values from the web console enrollment initiate response. Confirm enrollment in the console after submit."
+            android:textSize="14sp" />
+        <EditText
+            android:id="@+id/inputToken"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="Enrollment token"
+            android:inputType="textVisiblePassword" />
+        <EditText
+            android:id="@+id/inputDeviceId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Device ID (UUID)"
+            android:inputType="text" />
+        <EditText
+            android:id="@+id/inputChallenge"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Challenge nonce"
+            android:inputType="textVisiblePassword" />
+        <Button
+            android:id="@+id/btnSubmitEnroll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Submit enrollment" />
+        <TextView
+            android:id="@+id/txtEnrollResult"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textIsSelectable="true" />
+    </LinearLayout>
+</ScrollView>

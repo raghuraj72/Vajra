@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">VAJRA Companion</string>
+    <string name="default_server_url">http://10.0.2.2:3000</string>
+    <string name="status_not_enrolled">Not enrolled</string>
+    <string name="status_pending">Awaiting console confirmation</string>
+    <string name="status_active">Protected · agent active</string>
+    <string name="status_revoked">Enrollment revoked or removed</string>
+    <string name="hint_enroll">Enroll this phone using a one-time token from the VAJRA web console. Private keys stay in Android Keystore.</string>
+    <string name="heartbeat_never">No successful heartbeat yet</string>
+    <string name="heartbeat_ok">Last heartbeat: %1$s (recent)</string>
+    <string name="heartbeat_stale">Last heartbeat: %1$s (stale)</string>
+    <string name="heartbeat_offline">Last heartbeat: %1$s (offline)</string>
+    <string name="enroll_fields_required">Token, device ID, and challenge nonce are required.</string>
+    <string name="enroll_submitting">Submitting proof-of-possession…</string>
+    <string name="invalid_server_url">Server URL must start with http:// or https://</string>
+    <string name="saved">Saved</string>
+    <string name="disconnect_title">Disconnect this device?</string>
+    <string name="disconnect_message">Removes the local Keystore key and stops heartbeats. Also revoke the device from the web console if it remains listed.</string>
+    <string name="disconnect_confirm">Disconnect</string>
+    <string name="disconnected">Local identity cleared</string>
+    <string name="privacy_body">VAJRA Companion protects devices you own.\n\nData: device id, public key fingerprint, OS/agent version, command receipts, optional event metadata.\n\nNot collected: keystrokes, SMS, contacts, photos, microphone, camera, continuous location (not in this version).\n\nPermissions: INTERNET; POST_NOTIFICATIONS for ring alerts.\n\nDisconnect anytime in Settings. Confirm or revoke devices in the web console.</string>
+</resources>
