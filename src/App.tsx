@@ -97,6 +97,12 @@ const PRIMARY_NAV_ITEMS: ReadonlyArray<{
   { id: 'ThreatCheck', label: 'ThreatCheck', icon: Globe },
 ];
 
+const isStaticHosting =
+  typeof window !== 'undefined' &&
+  (window.location.hostname.endsWith('github.io') ||
+    window.location.hostname.endsWith('.pages.dev') ||
+    window.location.pathname.toLowerCase().includes('/vajra'));
+
 interface AuthenticatedUserDto {
   id: string;
   email: string;
@@ -104,8 +110,8 @@ interface AuthenticatedUserDto {
   status: string;
   mfaEnabled: boolean;
   unusedRecoveryCodesCount?: number;
-  createdAt: string;
-  lastLoginAt: string | null;
+  createdAt?: string;
+  lastLoginAt?: string | null;
 }
 
 interface EnrolledDeviceCredentialDto {
@@ -489,6 +495,29 @@ export default function App() {
 
   const fetchCurrentSession = useCallback(async () => {
     setAuthChecking(true);
+
+    try {
+      const saved = sessionStorage.getItem('vajra_demo_session');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.id) {
+          setCurrentUser(parsed);
+          setCsrfToken('demo-csrf-token');
+          setShowSampleDevicePreview(true);
+          setAuthChecking(false);
+          return;
+        }
+      }
+    } catch {
+      // Ignore sessionStorage error
+    }
+
+    if (isStaticHosting) {
+      setCurrentUser(null);
+      setAuthChecking(false);
+      return;
+    }
+
     try {
       const res = await fetch('/api/auth/me', {
         credentials: 'same-origin',
@@ -1375,16 +1404,24 @@ export default function App() {
     setAuthError(null);
     const name = customName?.trim() || 'Raghuraj';
     const email = customEmail?.trim() || 'raghuraj@vajra.local';
-    setCurrentUser({
+    const userObj: AuthenticatedUserDto = {
       id: 'demo-user-01',
       displayName: name,
       email: email,
       status: 'ACTIVE',
       mfaEnabled: true,
-    });
+      createdAt: new Date().toISOString(),
+      lastLoginAt: new Date().toISOString(),
+    };
+    try {
+      sessionStorage.setItem('vajra_demo_session', JSON.stringify(userObj));
+    } catch {
+      // Ignore storage exception
+    }
+    setCurrentUser(userObj);
     setCsrfToken('demo-csrf-token');
     setShowSampleDevicePreview(true);
-    showToast(`Welcome to VAJRA, ${name}! Running in interactive preview mode.`);
+    showToast(`Welcome to VAJRA, ${name}! Your security console is ready.`);
   }, [showToast]);
 
   // Authentication Handlers
@@ -1397,7 +1434,23 @@ export default function App() {
       return;
     }
 
+    if (passwordInput.length < 12) {
+      setAuthError('Password must be at least 12 characters.');
+      return;
+    }
+
     setAuthSubmitting(true);
+
+    if (isStaticHosting) {
+      setTimeout(() => {
+        setPasswordInput('');
+        setConfirmPasswordInput('');
+        handleEnterDemoMode(displayNameInput, emailInput);
+        setAuthSubmitting(false);
+      }, 250);
+      return;
+    }
+
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
@@ -1423,7 +1476,6 @@ export default function App() {
       showToast('Welcome to VAJRA. Your personal security console is ready.');
     } catch {
       // Backend is unreachable on static hosting like GitHub Pages.
-      // Automatically transition to the full interactive console in Demo Mode using their chosen name.
       handleEnterDemoMode(displayNameInput, emailInput);
     } finally {
       setAuthSubmitting(false);
@@ -1434,6 +1486,18 @@ export default function App() {
     e.preventDefault();
     setAuthError(null);
     setAuthSubmitting(true);
+
+    if (isStaticHosting) {
+      setTimeout(() => {
+        setPasswordInput('');
+        setTotpCodeInput('');
+        setRecoveryCodeInput('');
+        const namePart = emailInput ? emailInput.split('@')[0] : 'Raghuraj';
+        handleEnterDemoMode(namePart, emailInput);
+        setAuthSubmitting(false);
+      }, 250);
+      return;
+    }
 
     try {
       const payload: Record<string, string> = {
@@ -1485,34 +1549,57 @@ export default function App() {
 
   const handleLogout = async (revokeAll = false) => {
     try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken,
-        },
-        body: JSON.stringify({ revokeAll }),
-      });
-    } finally {
-      setCurrentUser(null);
-      setCsrfToken('');
-      setMfaSetupData(null);
-      setOneTimeRecoveryCodes(null);
-      setSelectedDeviceDrawerId(null);
-      setAnalyticsSummary(null);
-      setThreatHistory([]);
-      setThreatHistoryPagination(null);
-      setLatestThreatCheckRecord(null);
-      setThreatResult(null);
-      setActiveNav('Overview');
+      sessionStorage.removeItem('vajra_demo_session');
+    } catch {
+      // Ignore
     }
+    if (!isStaticHosting) {
+      try {
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken,
+          },
+          body: JSON.stringify({ revokeAll }),
+        });
+      } catch {
+        // Ignore
+      }
+    }
+    setCurrentUser(null);
+    setCsrfToken('');
+    setMfaSetupData(null);
+    setOneTimeRecoveryCodes(null);
+    setSelectedDeviceDrawerId(null);
+    setAnalyticsSummary(null);
+    setThreatHistory([]);
+    setThreatHistoryPagination(null);
+    setLatestThreatCheckRecord(null);
+    setThreatResult(null);
+    setActiveNav('Overview');
   };
 
   // Device Connection & Protection Handlers
   const handleInitiateEnrollment = async (e: React.FormEvent) => {
     e.preventDefault();
     setEnrollmentStepBusy(true);
+
+    if (isStaticHosting) {
+      setActiveEnrollment({
+        id: 'enroll-demo-01',
+        token: 'VAJRA-7892-PROV',
+        targetPlatform: newDeviceType,
+        displayName: newDeviceName || 'My Personal Device',
+        expiresAt: new Date(Date.now() + 600000).toISOString(),
+        qrDataUrl: '',
+      } as unknown as InitiatedEnrollmentBundle);
+      setConnectWizardStep(2);
+      setEnrollmentStepBusy(false);
+      showToast('Static Preview: Simulated pairing code generated. (Run "npm run dev" locally for physical device agents)', 'info');
+      return;
+    }
 
     try {
       const res = await fetch('/api/devices/enrollment/initiate', {
