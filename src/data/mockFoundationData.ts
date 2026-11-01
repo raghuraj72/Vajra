@@ -4,6 +4,7 @@
  */
 
 import {
+  AnalyticsSummaryDto,
   Device,
   DeviceStatus,
   DeviceType,
@@ -11,6 +12,44 @@ import {
   RiskLevel,
   SecurityEvent,
 } from '../../packages/shared-types/src/index.ts';
+
+export const DEMO_ANALYTICS_SUMMARY: AnalyticsSummaryDto = Object.freeze({
+  generatedAt: new Date().toISOString(),
+  dataSource: 'SAMPLE',
+  windowDescription: 'Preview Demonstration (2 Devices)',
+  accountPosture: {
+    currentScore: 98,
+    status: 'PROTECTED',
+    averageDeviceRiskScore: 98,
+  },
+  devices: {
+    totalCount: 2,
+    hardwareBackedCount: 2,
+    byLifecycleState: { ACTIVE: 2 },
+    byPlatform: { WINDOWS: 1, ANDROID: 1 },
+  },
+  securityEvents: {
+    totalRecentCount: 14,
+    bySeverity: { LOW: 14 },
+    byCategory: { POSTURE: 8, AUDIT: 6 },
+  },
+  alerts: {
+    totalCount: 0,
+    openUnreadCount: 0,
+    highSeverityUnreadCount: 0,
+    dismissedCount: 0,
+  },
+  threatChecks: {
+    totalCount: 3,
+    averageRiskScore: 12,
+    byVerdict: { 'LOW RISK': 3 },
+  },
+  remoteCommands: {
+    totalRecentCount: 0,
+    byStatus: {},
+    byActionType: {},
+  },
+});
 
 export const MOCK_DEVICES: readonly Device[] = Object.freeze([
   {

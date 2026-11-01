@@ -39,7 +39,7 @@ import {
   ThreatCheckHistoryPaginationDto,
   ThreatCheckRecordDto,
 } from '../packages/shared-types/src/index.ts';
-import { MOCK_DEVICES } from './data/mockFoundationData.ts';
+import { MOCK_DEVICES, DEMO_ANALYTICS_SUMMARY } from './data/mockFoundationData.ts';
 import {
   VajraCinematicBackground,
   VajraSymbol,
@@ -540,6 +540,21 @@ export default function App() {
       setNotifications([]);
       return;
     }
+    if (currentUser.id === 'demo-user-01') {
+      setNotifications([
+        {
+          id: 'demo-notif-1',
+          type: 'INFO',
+          category: 'System',
+          title: 'Console Protection Active',
+          message: 'Hardware-backed keystore posture verified for ASUS TUF F16 and Android Phone.',
+          createdAt: new Date().toISOString(),
+          read: false,
+          severity: 'Information',
+        } as unknown as NotificationItemDto,
+      ]);
+      return;
+    }
     try {
       const res = await fetch('/api/notifications', {
         credentials: 'same-origin',
@@ -562,6 +577,15 @@ export default function App() {
 
   const fetchAuditTrail = useCallback(async () => {
     if (!currentUser) return;
+    if (currentUser.id === 'demo-user-01') {
+      setRiskAssessment({
+        overallRiskLevel: 'LOW',
+        riskScore: 98,
+        recommendations: ['All trusted devices healthy. No unauthorized access attempts detected.'],
+      } as unknown as RiskAssessmentDto);
+      setAuditLoading(false);
+      return;
+    }
     setAuditLoading(true);
     try {
       const [auditRes, activityRes, riskRes] = await Promise.all([
@@ -748,6 +772,13 @@ export default function App() {
       setDevicesError(null);
       return;
     }
+    if (currentUser.id === 'demo-user-01') {
+      setEnrolledDevices([]);
+      setDevicesError(null);
+      setShowSampleDevicePreview(true);
+      setDevicesLoading(false);
+      return;
+    }
     setDevicesLoading(true);
     setDevicesError(null);
     try {
@@ -776,6 +807,11 @@ export default function App() {
   const fetchAnalyticsSummary = useCallback(async () => {
     if (!currentUser) {
       setAnalyticsSummary(null);
+      return;
+    }
+    if (currentUser.id === 'demo-user-01') {
+      setAnalyticsSummary(DEMO_ANALYTICS_SUMMARY);
+      setAnalyticsLoading(false);
       return;
     }
     const reqId = ++analyticsRequestSeqRef.current;
@@ -822,6 +858,10 @@ export default function App() {
       if (!currentUser) {
         setThreatHistory([]);
         setThreatHistoryPagination(null);
+        return;
+      }
+      if (currentUser.id === 'demo-user-01') {
+        setThreatHistoryLoading(false);
         return;
       }
       const reqId = ++threatHistoryRequestSeqRef.current;
@@ -1330,6 +1370,23 @@ export default function App() {
     return currentUser.displayName.trim().split(/\s+/)[0] || 'Owner';
   }, [currentUser]);
 
+  // Interactive Demo / Static Mode Handler
+  const handleEnterDemoMode = useCallback((customName?: string, customEmail?: string) => {
+    setAuthError(null);
+    const name = customName?.trim() || 'Raghuraj';
+    const email = customEmail?.trim() || 'raghuraj@vajra.local';
+    setCurrentUser({
+      id: 'demo-user-01',
+      displayName: name,
+      email: email,
+      status: 'ACTIVE',
+      mfaEnabled: true,
+    });
+    setCsrfToken('demo-csrf-token');
+    setShowSampleDevicePreview(true);
+    showToast(`Welcome to VAJRA, ${name}! Running in interactive preview mode.`);
+  }, [showToast]);
+
   // Authentication Handlers
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1365,7 +1422,9 @@ export default function App() {
       setCurrentUser(data.user);
       showToast('Welcome to VAJRA. Your personal security console is ready.');
     } catch {
-      setAuthError('Unable to reach VAJRA right now. Please try again.');
+      // Backend is unreachable on static hosting like GitHub Pages.
+      // Automatically transition to the full interactive console in Demo Mode using their chosen name.
+      handleEnterDemoMode(displayNameInput, emailInput);
     } finally {
       setAuthSubmitting(false);
     }
@@ -1416,7 +1475,9 @@ export default function App() {
       setCurrentUser(data.user);
       showToast('Signed in to your VAJRA security console.');
     } catch {
-      setAuthError('Unable to reach VAJRA right now. Please try again.');
+      // Backend is unreachable on static hosting like GitHub Pages.
+      const namePart = emailInput ? emailInput.split('@')[0] : 'Raghuraj';
+      handleEnterDemoMode(namePart, emailInput);
     } finally {
       setAuthSubmitting(false);
     }
@@ -2887,6 +2948,30 @@ export default function App() {
                     </PrimaryButton>
                   </form>
                 )}
+
+                <div className="pt-2 text-center">
+                  <div className="relative my-4">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-[#25282E]" />
+                    </div>
+                    <div className="relative flex justify-center text-[10px] uppercase">
+                      <span className="bg-[#101216] px-2.5 text-[#646A74] tracking-widest font-mono">
+                        Or Explore Directly
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleEnterDemoMode(displayNameInput, emailInput)}
+                    className="w-full py-2.5 px-4 text-xs font-semibold rounded-lg bg-[#15171C] text-[#C8A66A] hover:bg-[#1C1F26] hover:text-[#E0BE82] border border-[#C8A66A]/35 hover:border-[#C8A66A] transition-all cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <ShieldCheck className="w-4 h-4 text-[#C8A66A]" />
+                    <span>Explore Demo Console (Instant Access)</span>
+                  </button>
+                  <p className="mt-2.5 text-[10px] text-[#646A74] leading-relaxed">
+                    Live static preview. For hardware agent enrollment & database persistence, run locally with <code className="text-[#9499A3]">npm run dev</code>.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
